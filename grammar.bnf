@@ -1,0 +1,8 @@
+expression ::=  literal | unary | binary | grouping ;
+literal ::=  number | string | "true" | "false" | "nil" ;
+grouping ::=  "(" expression ")" ;
+unary ::= ( "-" | "!" ) expression ;
+binary ::=  expression operator expression ;
+operator ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/" ;
+number ::= 0-9*
+string ::= "a-z|A-Z"*

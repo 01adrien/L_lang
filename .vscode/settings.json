@@ -1,0 +1,16 @@
+{
+  "files.associations": {
+    "*.embeddedhtml": "html",
+    "*.c": "c",
+    "*.h": "c",
+    "*.tcc": "c",
+    "unordered_map": "c",
+    "memory_resource": "c",
+    "algorithm": "c",
+    "functional": "c",
+    "memory": "c",
+    "streambuf": "c",
+    "tuple": "c",
+    "utility": "c"
+  }
+}
