@@ -14,8 +14,8 @@ chunk_t* create_chunk()
 
 void free_chunk(chunk_t* chunk)
 {
-  // free constant
   free(chunk->OPcodes);
+  free_value_array(&chunk->constants);
 }
 
 void write_chunk(chunk_t* chunk, uint8_t byte)
@@ -57,6 +57,11 @@ void write_value_array(value_array_t* array, value_t value)
   }
   array->values[array->count] = value;
   array->count++;
+}
+
+void free_value_array(value_array_t* array)
+{
+  free(array->values);
 }
 
 void emit_byte(chunk_t* chunk, uint8_t byte)

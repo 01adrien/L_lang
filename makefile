@@ -5,10 +5,10 @@ src := $(wildcard src/*.c)
 obj := $(src:.c = .o)
 
 build: $(obj)
-	@ gcc $^ -o $@ $(flags) && ./build prog.ll
+	@ gcc $^ -o $@ $(flags) && ./build prog.l
 
 memcheck:                                                                       
-	@ valgrind --leak-check=full --show-leak-kinds=all ./build prog.ll
+	@ valgrind --leak-check=full --show-leak-kinds=all ./build prog.l
 
 run:
 	@ ./build prog.ll

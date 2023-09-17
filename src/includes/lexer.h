@@ -5,12 +5,14 @@
 #include "scanner.h"
 
 typedef enum token_type {
+  TOKEN_EMPTY,
   TOKEN_EOF,
   TOKEN_NEWLINE,
   TOKEN_SEMICOLON,
   TOKEN_SLASH,
   TOKEN_STAR,
   TOKEN_MINUS,
+  TOKEN_MINUS_UNARY,
   TOKEN_PLUS,
   TOKEN_NUMBER,
   TOKEN_MODULO,
@@ -48,16 +50,16 @@ typedef enum precedence {
 
 typedef struct token {
   token_type_t type;
-  const char* start;
   precedence_t precedence;
+  const char* start;
   int length;
   int line;
-
 } token_t;
 
 typedef struct lexer {
   token_t previous;
   token_t current;
+  token_t next;
 } lexer_t;
 
 #define PRINT_TOKEN(token)                                                     \
@@ -66,5 +68,6 @@ typedef struct lexer {
 token_t scan_token(scanner_t* scanner);
 void advance_lexer(lexer_t* lexer, scanner_t* scanner);
 char* type(token_t token);
-
+token_t
+make_token(token_type_t type, scanner_t* scanner, precedence_t precedence);
 #endif   // !

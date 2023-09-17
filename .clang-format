@@ -22,7 +22,9 @@ UseCRLF: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: false
 AllowShortBlocksOnASingleLine: true
-AlignOperands:   true
+AlignOperands: true
 BreakBeforeTernaryOperators: true
 AlignAfterOpenBracket: BlockIndent
 BreakBeforeBraces: Stroustrup
+
+BreakBeforeBinaryOperators: true

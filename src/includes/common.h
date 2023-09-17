@@ -1,4 +1,4 @@
-#ifndef _COMMON_H
+#ifndef _COMMON_H_
 #define _COMMON_H_
 
 #include <assert.h>
@@ -10,6 +10,6 @@
 #include <string.h>
 
 // #define DEBUG_STACK_TRACE_EXECUTION
-// #define DEBUG_PRINT_BYTECODE
+#define DEBUG_PRINT_BYTECODE
 
 #endif   // !

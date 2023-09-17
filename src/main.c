@@ -39,31 +39,26 @@ void run_file(const char* path)
   init_parser(&lexer, &scanner, &parser, &chunk, &token_stack, &token_queue);
   advance_lexer(&lexer, &scanner);
   parsing_error_t parse_err = NULL;
-  while (lexer.current.type != TOKEN_EOF || !parser.is_error || !parse_err) {
-    parse_err = parse(&parser, PREC_ASSIGNMENT);
+  while (lexer.next.type != TOKEN_EOF || parser.is_error || parse_err) {
+    parse_err = parse(&parser);
   }
-
-  printf("Q\n");
-  print_queue(parser.queue);
-  printf("S\n");
-  print_stack(parser.stack);
-
-  /*
   if (parse_err || parser.is_error) {
     printf("%s\n", parse_err ? parse_err : parser.error);
-    free_chunk(&chunk);
+    free_chunk(parser.chunk);
     return;
   }
-  emit_byte(&chunk, OP_RETURN);
-
+  printf("\n");
+  printf("%s\n\n", source);
+  generate_btc(&parser);
 #ifdef DEBUG_PRINT_BYTECODE
-  debug_chunk(&chunk, "byte code");
+  debug_chunk(parser.chunk, "byte code");
+  printf("\n");
 #endif
 
-  interpret_result_t interpret_err = run_vm(&chunk);
-  printf("interpreter return status: %s\n", interpreter_status(interpret_err));
-  free_chunk(&chunk);
-  */
+  interpret_result_t res = run_vm(parser.chunk);
+  printf("status: %s\n\n", interpreter_status(res));
+  free_chunk(parser.chunk);
+  free(source);
 }
 
 char* read_file(const char* path)

@@ -43,6 +43,7 @@ void write_chunk(chunk_t* chunk, uint8_t byte);
 void free_chunk(chunk_t* chunk);
 uint16_t write_constant(chunk_t* chunk, value_t value);
 void write_value_array(value_array_t* array, value_t value);
+void free_value_array(value_array_t* array);
 void emit_byte(chunk_t* chunk, uint8_t byte);
 void emit_bytes(chunk_t* chunk, uint8_t byte1, uint8_t byte2);
 void emit_constant(chunk_t* chunk, value_t value);
