@@ -10,6 +10,6 @@
 #include <string.h>
 
 // #define DEBUG_STACK_TRACE_EXECUTION
-#define DEBUG_PRINT_BYTECODE
+// #define DEBUG_PRINT_BYTECODE
 
 #endif   // !

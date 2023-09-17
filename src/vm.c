@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 void reset_vm(chunk_t* chunk);
-void print_stack();
+void print_vm_stack();
 void push(value_t value);
 value_t pop();
 interpret_result_t binary_operation(char sign);
@@ -17,7 +17,7 @@ interpret_result_t run_vm(chunk_t* chunk)
   reset_vm(chunk);
   for (;;) {
 #ifdef DEBUG_STACK_TRACE_EXECUTION
-    print_stack();
+    print_VM_stack();
 #endif
     OPcode_t instruction = *vm.ip++;
     switch (instruction) {
@@ -106,7 +106,7 @@ void reset_vm(chunk_t* chunk)
   vm.chunk = chunk;
 }
 
-void print_stack()
+void print_vm_stack()
 {
   for (value_t* elmt = vm.stack; elmt < vm.stack_top; elmt++) {
     printf("[ ");

@@ -6,10 +6,15 @@ void binary(parser_t* parser);
 void literal(parser_t* parser);
 void grouping(parser_t* parser);
 void unary(parser_t* parser);
+
+// Helpers
 void consume(parser_t* parser, token_type_t type, parsing_error_t error);
 
+// Shuting yard
+
 void init_parser(
-    lexer_t* lexer, scanner_t* scanner, parser_t* parser, chunk_t* chunk
+    lexer_t* lexer, scanner_t* scanner, parser_t* parser, chunk_t* chunk,
+    token_stack_t* stack, token_queue_t* queue
 )
 {
   parser->lexer = lexer;
@@ -17,22 +22,21 @@ void init_parser(
   parser->chunk = chunk;
   parser->is_error = false;
   parser->error = NULL;
+  parser->queue = queue;
+  parser->queue->head = NULL;
+  parser->stack = stack;
+  parser->stack->top = NULL;
 }
 
 parsing_error_t parse(parser_t* parser, precedence_t precedence)
 {
-  if (parser->is_error) {
-    return parser->error;
-  }
+
   lexer_t* lexer = parser->lexer;
   scanner_t* scanner = parser->scanner;
-  advance_lexer(lexer, scanner);
-  expression(parser);
-  while (precedence <= lexer->current.precedence) {
+  while (lexer->current.type != TOKEN_EOF) {
     advance_lexer(lexer, scanner);
     expression(parser);
   }
-  // consume(parser, TOKEN_SEMICOLON, "Expect ')' after expression.\n");
 }
 
 void expression(parser_t* parser)
@@ -45,7 +49,7 @@ void expression(parser_t* parser)
   case TOKEN_FALSE:
   case TOKEN_NIL:
   case TOKEN_NUMBER:
-    literal(parser);
+    enqueue_token(parser, token);
     break;
   case TOKEN_BANG_EQUAL:
   case TOKEN_GREATER:
@@ -58,7 +62,7 @@ void expression(parser_t* parser)
   case TOKEN_PLUS:
   case TOKEN_STAR:
   case TOKEN_SLASH:
-    binary(parser);
+    push_token(parser, token);
     break;
   case TOKEN_BANG:
     unary(parser);
@@ -67,8 +71,9 @@ void expression(parser_t* parser)
     grouping(parser);
     break;
   case TOKEN_RIGHT_PAREN:
-  case TOKEN_EOF:
     break;
+  case TOKEN_EOF:
+    return;
   default:
     printf("Unknow token : ");
     PRINT_TOKEN(lexer->previous);
@@ -161,6 +166,81 @@ void unary(parser_t* parser)
   default:
     break;
   }
+}
+
+void print_queue(token_queue_t* queue)
+{
+  node_t* temp = queue->head;
+  while (temp) {
+    PRINT_TOKEN(temp->token);
+    temp = temp->next;
+  }
+}
+
+void print_stack(token_stack_t* stack)
+{
+  node_t* temp = stack->top;
+  while (temp) {
+    PRINT_TOKEN(temp->token);
+    temp = temp->next;
+  }
+}
+
+void free_queue(token_queue_t* queue)
+{
+}
+
+void free_stack(token_stack_t* stack)
+{
+}
+
+void enqueue_token(parser_t* parser, token_t token)
+{
+  token_queue_t* queue = parser->queue;
+  token_stack_t* stack = parser->stack;
+  node_t* new = calloc(1, sizeof(node_t));
+  new->token = token;
+  new->next = NULL;
+
+  node_t* temp = queue->head;
+  if (!temp) {
+    queue->head = new;
+    return;
+  }
+  while (temp->next) {
+    temp = temp->next;
+  }
+  temp->next = new;
+}
+
+void push_token(parser_t* parser, token_t token)
+{
+  token_queue_t* queue = parser->queue;
+  token_stack_t* stack = parser->stack;
+  node_t* new = calloc(1, sizeof(node_t));
+  new->token = token;
+  new->next = NULL;
+  while (stack->top && stack->top->token.precedence > token.precedence) {
+    enqueue_token(parser, pop_token(stack)->token);
+  }
+  node_t* temp = stack->top;
+  if (!temp) {
+    stack->top = new;
+    return;
+  }
+  new->next = stack->top;
+  stack->top = new;
+}
+
+node_t* pop_token(token_stack_t* stack)
+{
+  node_t* res = stack->top;
+  stack->top = res->next;
+  return res;
+}
+
+node_t* dequeue_token(token_queue_t* queue)
+{
 }
 
 void consume(parser_t* parser, token_type_t type, parsing_error_t error)

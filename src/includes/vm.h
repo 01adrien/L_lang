@@ -28,4 +28,5 @@ extern vm_t vm;
 
 interpret_result_t run_vm(chunk_t* chunk);
 char* interpreter_status(interpret_result_t res);
+
 #endif   // !
