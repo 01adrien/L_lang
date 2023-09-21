@@ -5,13 +5,13 @@ src := $(wildcard src/*.c)
 obj := $(src:.c = .o)
 
 build: $(obj)
-	@ gcc $^ -o $@ $(flags) && ./build prog.l
+	@ gcc $^ -o $@ $(flags) && ./build prog.rb
 
 memcheck:                                                                       
-	@ valgrind --leak-check=full --show-leak-kinds=all ./build prog.l
+	@ valgrind --leak-check=full --show-leak-kinds=all ./build prog.rb
 
 run:
-	@ ./build prog.ll
+	@ ./build prog.rb
 
 clean:
 	@ rm build

@@ -32,6 +32,8 @@ typedef enum token_type {
   TOKEN_TRUE,
   TOKEN_IDENTIFIER,
   TOKEN_STRING,
+  TOKEN_VAR,
+  TOKEN_PRINT,
 } token_type_t;
 
 typedef enum precedence {
@@ -70,4 +72,5 @@ void advance_lexer(lexer_t* lexer, scanner_t* scanner);
 char* type(token_t token);
 token_t
 make_token(token_type_t type, scanner_t* scanner, precedence_t precedence);
-#endif   // !
+
+#endif   //

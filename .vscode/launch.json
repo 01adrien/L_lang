@@ -9,22 +9,22 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build",
-      "args": ["${workspaceFolder}/prog.ll"],
-      "stopAtEntry": FALSE_VAL,
+      "args": ["${workspaceFolder}/prog.rb"],
+      "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],
-      "externalConsole": FALSE_VAL,
+      "externalConsole": false,
       "MIMode": "gdb",
       "setupCommands": [
           {
               "description": "Activer l'impression en mode Pretty pour gdb",
               "text": "-enable-pretty-printing",
-              "ignoreFailures": TRUE_VAL
+              "ignoreFailures": true
           },
           {
               "description": "Définir la version désassemblage sur Intel",
               "text": "-gdb-set disassembly-flavor intel",
-              "ignoreFailures": TRUE_VAL
+              "ignoreFailures": true
           }
       ]
     }

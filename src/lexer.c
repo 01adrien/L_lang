@@ -3,7 +3,6 @@
 
 token_t token_number(scanner_t* scanner);
 token_t token_string(scanner_t* scanner);
-
 token_t token_error(const char* msg, scanner_t* scanner);
 token_t token_identifier(scanner_t* scanner);
 token_type_t check_id(scanner_t* scanner);
@@ -28,6 +27,10 @@ token_type_t check_id(scanner_t* scanner)
     return is_keyword("false", 5, TOKEN_FALSE, scanner);
   case 'n':
     return is_keyword("nil", 3, TOKEN_NIL, scanner);
+  case 'v':
+    return is_keyword("var", 3, TOKEN_VAR, scanner);
+  case 'p':
+    return is_keyword("print", 4, TOKEN_PRINT, scanner);
   }
   return TOKEN_IDENTIFIER;
 }
@@ -215,7 +218,10 @@ char* type(token_t token)
     return "MINUS UNARY";
   case TOKEN_EMPTY:
     return "EMPTY";
-    break;
+  case TOKEN_VAR:
+    return "VAR";
+  case TOKEN_PRINT:
+    return "PRINT";
   default:
     return "UNKNOW";
   }

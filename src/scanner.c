@@ -30,6 +30,11 @@ void skip_blanks(scanner_t* scanner)
     case '\n':
       advance_scanner(scanner);
       break;
+    case '#':
+      while (scanner->current[1] != ';') {
+        advance_scanner(scanner);
+      }
+
     default:
       return;
     }

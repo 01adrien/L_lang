@@ -99,13 +99,40 @@ interpret_result_t run_vm(chunk_t* chunk)
       push(NIL_VAL);
       break;
     };
-    case OP_RETURN: {
-      printf("result: ");
-      value_t res = pop();
-      print_value(res);
+    case OP_PRINT: {
+      print_value(pop());
       printf("\n");
+      break;
+    }
+    case OP_POP: {
+      pop();
+      break;
+    }
+    case OP_DEFINE_GLOBAL: {
+      value_t value = pop();
+      const char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
+      table_set(&vm.globals, name, value);
+      break;
+    }
+    case OP_GET_GLOBAL: {
+      const char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
+      value_t var = table_get(&vm.globals, name);
+      if (IS_NIL(var)) {
+        printf("unbound variable '%s'\n", name);
+        return ERROR_RUNTIME_EXCEPTION;
+      }
+      push(var);
+      break;
+    }
+    case OP_SET_GLOBAL: {
+      char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
+      value_t var = pop();
+      break;
+    }
+    case OP_RETURN: {
       return SUCCESS;
     }
+
     default:
       printf("=> %d\n", instruction);
       return ERROR_UNKNOWN_OPCODE;
@@ -118,6 +145,16 @@ void reset_vm(chunk_t* chunk)
   vm.stack_top = vm.stack;
   vm.ip = chunk->OPcodes;
   vm.chunk = chunk;
+  table_init(&vm.globals);
+  table_init(&vm.strings);
+  vm.objects = NULL;
+}
+
+void free_vm()
+{
+  table_free(&vm.globals);
+  table_free(&vm.strings);
+  free_objects();
 }
 
 void print_vm_stack()
@@ -134,6 +171,17 @@ void push(value_t value)
 {
   *vm.stack_top = value;
   vm.stack_top++;
+}
+
+value_t pop()
+{
+  vm.stack_top--;
+  return *vm.stack_top;
+}
+
+value_t peek_stack(int n)
+{
+  return vm.stack_top[-1 - n];
 }
 
 bool equality()
@@ -169,15 +217,9 @@ value_t concatenate()
   memcpy(new, s2, strlen(s2));
   memcpy(new + strlen(s2), s1, strlen(s1));
   new[len] = '\0';
-  free(s1);
-  free(s2);
+  // free(s1);
+  // free(s2);
   return STRING_VAL(new);
-}
-
-value_t pop()
-{
-  vm.stack_top--;
-  return *vm.stack_top;
 }
 
 interpret_result_t binary_operation(char sign)
@@ -212,11 +254,6 @@ interpret_result_t binary_operation(char sign)
   default:
     return ERROR_RUNTIME_EXCEPTION;
   }
-}
-
-value_t peek_stack(int n)
-{
-  return vm.stack_top[-1 - n];
 }
 
 char* interpreter_status(interpret_result_t status)

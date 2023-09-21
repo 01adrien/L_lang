@@ -1,13 +1,26 @@
 #include "includes/parser.h"
+#include "includes/vm.h"
 #include <stdio.h>
 
+// Parsing rules
 void expression(parser_t* parser);
 void binary(parser_t* parser);
 void literal(parser_t* parser);
 void grouping(parser_t* parser);
 void handle_minus(parser_t* parser);
 void unary(parser_t* parser);
+void declaration(parser_t* parser);
+void statement(parser_t* parser);
+void assignement(parser_t* parser);
+
+// Helpers
 void consume(parser_t* parser, token_type_t type, parsing_error_t error);
+object_t* string(token_t token);
+uint16_t get_constant_var(chunk_t* chunk, token_t token);
+bool match_token(parser_t* parser, token_type_t type);
+void generate_one_btc(parser_t* parser);
+
+// Shunting yard
 void print_queue(token_queue_t* queue);
 void print_stack(token_stack_t* stack);
 void enqueue_token(parser_t* parser, token_t token);
@@ -16,7 +29,7 @@ node_t* dequeue_token(token_queue_t* queue);
 node_t* pop_token(token_stack_t* stack);
 node_t* create_node(token_t token);
 token_t get_token(node_t* node);
-char* string(token_t token);
+node_t* peek_queue(token_queue_t* queue);
 
 void init_parser(
     lexer_t* lexer, scanner_t* scanner, parser_t* parser, chunk_t* chunk,
@@ -47,6 +60,9 @@ parsing_error_t parse(parser_t* parser)
   while (stack->top) {
     enqueue_token(parser, get_token(pop_token(stack)));
   }
+#ifdef DEBUG_PRINT_QUEUE
+  print_queue(parser->queue);
+#endif
 }
 
 void expression(parser_t* parser)
@@ -58,8 +74,14 @@ void expression(parser_t* parser)
   case TOKEN_TRUE:
   case TOKEN_FALSE:
   case TOKEN_NIL:
+  case TOKEN_PRINT:
   case TOKEN_NUMBER:
+  case TOKEN_IDENTIFIER:
     literal(parser);
+    break;
+  case TOKEN_EQUAL:
+  case TOKEN_VAR:
+    assignement(parser);
     break;
   case TOKEN_BANG_EQUAL:
   case TOKEN_GREATER:
@@ -79,12 +101,16 @@ void expression(parser_t* parser)
   case TOKEN_BANG:
     unary(parser);
     break;
+  case TOKEN_SEMICOLON:
+    statement(parser);
+    break;
   case TOKEN_LEFT_PAREN:
     push_token(parser, token);
     break;
   case TOKEN_RIGHT_PAREN:
     grouping(parser);
     break;
+  case TOKEN_EMPTY:
   case TOKEN_EOF:
     return;
   default:
@@ -134,6 +160,74 @@ void unary(parser_t* parser)
   }
 }
 
+void handle_minus(parser_t* parser)
+{
+  token_t token = parser->lexer->previous;
+  if (token.type == TOKEN_LEFT_PAREN || token.type == TOKEN_EMPTY) {
+    unary(parser);
+    return;
+  }
+  else {
+    binary(parser);
+  }
+}
+
+void declaration(parser_t* parser)
+{
+}
+
+void statement(parser_t* parser)
+{
+  token_t token = parser->lexer->current;
+  token_queue_t* queue = parser->queue;
+  token_stack_t* stack = parser->stack;
+  while (stack->top) {
+    enqueue_token(parser, get_token(pop_token(stack)));
+  }
+  enqueue_token(parser, token);
+}
+
+void assignement(parser_t* parser)
+{
+  enqueue_token(parser, parser->lexer->current);
+}
+
+//**************** HELPERS ********************//
+
+void consume(parser_t* parser, token_type_t type, parsing_error_t error)
+{
+  token_t t = parser->lexer->current;
+  if (parser->lexer->next.type == type) {
+    advance_lexer(parser->lexer, parser->scanner);
+    return;
+  }
+
+  // parser->is_error = true;
+  // parser->error = error;
+}
+bool match_token(parser_t* parser, token_type_t type)
+{
+  if (parser->lexer->current.type == type) {
+    advance_lexer(parser->lexer, parser->scanner);
+    return true;
+  }
+  return false;
+}
+
+uint16_t get_constant_var(chunk_t* chunk, token_t token)
+{
+  object_t* str = allocate_string(token.start, token.length);
+  return write_constant(chunk, str->value);
+}
+
+object_t* string(token_t token)
+{
+  object_t* str = allocate_string(token.start + 1, token.length - 2);
+  return str;
+}
+
+//*************** SHUNTING YARD ****************//
+
 void print_queue(token_queue_t* queue)
 {
   node_t* temp = queue->head;
@@ -176,7 +270,7 @@ void push_token(parser_t* parser, token_t token)
   if (token.type != TOKEN_LEFT_PAREN && token.type != TOKEN_RIGHT_PAREN
       && stack->top) {
     token_t top_token = stack->top->token;
-    while (stack->top && top_token.precedence > token.precedence) {
+    while (stack->top && top_token.precedence >= token.precedence) {
       token_t t = get_token(pop_token(stack));
       if (t.type != TOKEN_LEFT_PAREN) {
         enqueue_token(parser, t);
@@ -212,30 +306,16 @@ node_t* dequeue_token(token_queue_t* queue)
   return res;
 }
 
+node_t* peek_queue(token_queue_t* queue)
+{
+  return queue->head;
+}
+
 token_t get_token(node_t* node)
 {
   token_t token = node->token;
   free(node);
   return token;
-}
-
-char* string(token_t token)
-{
-  char* string = calloc(token.length, sizeof(char));
-  memcpy(string, token.start + 1, token.length - 2);
-  return string;
-}
-
-void handle_minus(parser_t* parser)
-{
-  token_t token = parser->lexer->previous;
-  if (token.type == TOKEN_LEFT_PAREN || token.type == TOKEN_EMPTY) {
-    unary(parser);
-    return;
-  }
-  else {
-    binary(parser);
-  }
 }
 
 node_t* create_node(token_t token)
@@ -246,21 +326,20 @@ node_t* create_node(token_t token)
   return node;
 }
 
-void consume(parser_t* parser, token_type_t type, parsing_error_t error)
+void generate_btc(parser_t* parser)
 {
-  if (parser->lexer->next.type == type) {
-    advance_lexer(parser->lexer, parser->scanner);
-    return;
+  token_queue_t* queue = parser->queue;
+
+  while (queue->head) {
+    generate_one_btc(parser);
   }
-  parser->is_error = true;
-  parser->error = error;
 }
 
-void generate_btc(parser_t* parser)
+void generate_one_btc(parser_t* parser)
 {
   chunk_t* chunk = parser->chunk;
   token_queue_t* queue = parser->queue;
-  while (queue->head) {
+  if (queue->head) {
     token_t token = get_token(dequeue_token(queue));
     switch (token.type) {
     case TOKEN_MINUS:
@@ -306,7 +385,7 @@ void generate_btc(parser_t* parser)
       emit_constant(chunk, NUMBER_VAL(strtod(token.start, NULL)));
       break;
     case TOKEN_STRING:
-      emit_constant(chunk, STRING_VAL(string(token)));
+      emit_constant(chunk, string(token)->value);
       break;
     case TOKEN_TRUE:
       emit_byte(chunk, OP_TRUE);
@@ -317,9 +396,35 @@ void generate_btc(parser_t* parser)
     case TOKEN_NIL:
       emit_byte(chunk, OP_NIL);
       break;
+    case TOKEN_PRINT: {
+      while (parser->queue->head->token.type != TOKEN_SEMICOLON) {
+        generate_one_btc(parser);
+      }
+      emit_byte(chunk, OP_PRINT);
+      break;
+    }
+    case TOKEN_VAR: {
+      token_t name = get_token(dequeue_token(queue));
+      uint16_t index = get_constant_var(parser->chunk, name);
+      token_t next = get_token(dequeue_token(queue));
+      if (next.type == TOKEN_EQUAL) {
+        while (parser->queue->head->token.type != TOKEN_SEMICOLON) {
+          generate_one_btc(parser);
+        }
+        emit_bytes(parser->chunk, OP_DEFINE_GLOBAL, index);
+      }
+      else {
+        emit_byte(parser->chunk, OP_NIL);
+      }
+      break;
+    }
+    case TOKEN_IDENTIFIER: {
+      uint16_t index = get_constant_var(parser->chunk, token);
+      emit_bytes(chunk, OP_GET_GLOBAL, index);
+      break;
+    }
     default:
       return;
     }
   }
-  emit_byte(chunk, OP_RETURN);
 }

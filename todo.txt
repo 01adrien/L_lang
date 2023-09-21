@@ -1,1 +1,6 @@
-Shunting Yard algorithm for precedence 
+- handle op constant 16 in debug.c and everywhere
+- continue hashtable
+- resize down hashtable
+- string interning
+- begin GC
+- vm and synthax error msg

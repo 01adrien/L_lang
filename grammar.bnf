@@ -1,8 +1,13 @@
 string ::= "a-z|A-Z"*
 number ::= 0-9*
+id ::= number* U string* 
 literal ::=  number | string | "true" | "false" | "nil" ;
-expression ::=  literal | unary | binary | grouping ;
+expression ::=  literal | unary | binary | grouping | assignement;
 grouping ::=  "(" expression ")" ;
 unary ::= ( "-" | "!" ) expression ;
 binary ::=  expression operator expression ;
 operator ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/" ;
+
+statement ::= assignement | expression ";" ;
+assignement ::= "var" id "=" expression
+

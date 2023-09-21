@@ -13,10 +13,12 @@ void debug_chunk(chunk_t* chunk, const char* name)
   while (offset < chunk->count) {
     offset = debug_instruction(chunk, offset);
   }
+  printf("constants count %ld\n", chunk->constants.count);
 }
 
 int debug_instruction(chunk_t* chunk, int offset)
 {
+  // implement constant 16
   printf("%2d | ", offset);
   OPcode_t instruction = chunk->OPcodes[offset];
   switch (instruction) {
@@ -24,6 +26,8 @@ int debug_instruction(chunk_t* chunk, int offset)
     return basic_instruction("OP_RETURN", offset);
   case OP_CONSTANT_8:
     return constant_8_instruction("OP_CONSTANT_8", offset, chunk);
+  case OP_CONSTANT_16:
+    return constant_8_instruction("OP_CONSTANT_16", offset, chunk);
   case OP_ADD:
     return basic_instruction("OP_ADD", offset);
   case OP_DIVIDE:
@@ -50,8 +54,18 @@ int debug_instruction(chunk_t* chunk, int offset)
     return basic_instruction("OP_NOT", offset);
   case OP_MODULO:
     return basic_instruction("OP_MODULO", offset);
+  case OP_PRINT:
+    return basic_instruction("OP_PRINT", offset);
+  case OP_POP:
+    return basic_instruction("OP_POP", offset);
+  case OP_DEFINE_GLOBAL:
+    return constant_8_instruction("OP_DEFINE_GLOBAL", offset, chunk);
+  case OP_GET_GLOBAL:
+    return constant_8_instruction("OP_GET_GLOBAL", offset, chunk);
+  case OP_SET_GLOBAL:
+    return constant_8_instruction("OP_SET_GLOBAL", offset, chunk);
   default:
-    printf("unknow OP code.\n");
+    printf("unknow OP code. [%d]\n", instruction);
     break;
   }
 }
