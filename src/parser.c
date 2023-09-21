@@ -1,4 +1,5 @@
 #include "includes/parser.h"
+#include "includes/memory.h"
 #include "includes/vm.h"
 #include <stdio.h>
 
@@ -9,7 +10,6 @@ void literal(parser_t* parser);
 void grouping(parser_t* parser);
 void handle_minus(parser_t* parser);
 void unary(parser_t* parser);
-void declaration(parser_t* parser);
 void statement(parser_t* parser);
 void assignement(parser_t* parser);
 
@@ -47,6 +47,8 @@ void init_parser(
   parser->stack->top = NULL;
 }
 
+vm_t vm_copy2;
+
 parsing_error_t parse(parser_t* parser)
 {
 
@@ -57,12 +59,14 @@ parsing_error_t parse(parser_t* parser)
     advance_lexer(lexer, scanner);
     expression(parser);
   }
+
   while (stack->top) {
     enqueue_token(parser, get_token(pop_token(stack)));
   }
 #ifdef DEBUG_PRINT_QUEUE
   print_queue(parser->queue);
 #endif
+  print_stack(stack);
 }
 
 void expression(parser_t* parser)
@@ -141,6 +145,9 @@ void grouping(parser_t* parser)
     enqueue_token(parser, get_token(node));
     node = pop_token(stack);
   }
+  if (node && node->token.type == TOKEN_LEFT_PAREN) {
+    FREE(node, node_t);
+  }
 }
 
 void unary(parser_t* parser)
@@ -172,10 +179,6 @@ void handle_minus(parser_t* parser)
   }
 }
 
-void declaration(parser_t* parser)
-{
-}
-
 void statement(parser_t* parser)
 {
   token_t token = parser->lexer->current;
@@ -205,6 +208,7 @@ void consume(parser_t* parser, token_type_t type, parsing_error_t error)
   // parser->is_error = true;
   // parser->error = error;
 }
+
 bool match_token(parser_t* parser, token_type_t type)
 {
   if (parser->lexer->current.type == type) {
@@ -222,8 +226,7 @@ uint16_t get_constant_var(chunk_t* chunk, token_t token)
 
 object_t* string(token_t token)
 {
-  object_t* str = allocate_string(token.start + 1, token.length - 2);
-  return str;
+  return allocate_string(token.start + 1, token.length - 2);
 }
 
 //*************** SHUNTING YARD ****************//
@@ -314,7 +317,7 @@ node_t* peek_queue(token_queue_t* queue)
 token_t get_token(node_t* node)
 {
   token_t token = node->token;
-  free(node);
+  FREE(node, node_t);
   return token;
 }
 
@@ -329,7 +332,6 @@ node_t* create_node(token_t token)
 void generate_btc(parser_t* parser)
 {
   token_queue_t* queue = parser->queue;
-
   while (queue->head) {
     generate_one_btc(parser);
   }
@@ -337,6 +339,7 @@ void generate_btc(parser_t* parser)
 
 void generate_one_btc(parser_t* parser)
 {
+
   chunk_t* chunk = parser->chunk;
   token_queue_t* queue = parser->queue;
   if (queue->head) {

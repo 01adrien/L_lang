@@ -10,5 +10,6 @@ typedef struct object {
 
 void free_objects();
 object_t* allocate_string(const char* str, int len);
+object_t* allocate_object(size_t size, value_t value);
 
 #endif   // !

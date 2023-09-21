@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 void free_object(object_t* object);
-object_t* allocate_object(size_t size, value_t value);
 
 object_t* allocate_object(size_t size, value_t value)
 {
@@ -14,6 +13,9 @@ object_t* allocate_object(size_t size, value_t value)
   object->value = value;
   object->next = vm.objects;
   vm.objects = object;
+  // if (type_of(value) == STRING_T) {
+  //   table_set(&vm.strings, AS_STRING(value), NIL_VAL);
+  // }
   return object;
 }
 
@@ -23,7 +25,6 @@ object_t* allocate_string(const char* str, int len)
   memcpy(chars, str, len);
   value_t value = STRING_VAL(chars);
   object_t* string = allocate_object(1, value);
-  // table_set(&vm.strings, AS_STRING(value), NIL_VAL);
   return string;
 }
 
@@ -31,7 +32,6 @@ void free_objects()
 {
   object_t* temp = vm.objects;
   while (temp) {
-    // print_value(temp->value);
     free_object(temp);
     object_t* del = temp;
     temp = temp->next;

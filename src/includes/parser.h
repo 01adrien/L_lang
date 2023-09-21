@@ -5,6 +5,7 @@
 #include "common.h"
 #include "lexer.h"
 #include "scanner.h"
+#include "vm.h"
 
 typedef const char* parsing_error_t;
 typedef struct node node_t;

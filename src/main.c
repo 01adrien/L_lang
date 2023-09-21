@@ -25,7 +25,6 @@ int main(int argc, char const* argv[])
   if (argc == 1) {
     repl();
   }
-  free_vm();
 }
 
 void repl()
@@ -40,6 +39,7 @@ void run_file(const char* path)
   init_parser(&lexer, &scanner, &parser, &chunk, &token_stack, &token_queue);
   advance_lexer(&lexer, &scanner);
   parsing_error_t parse_err = NULL;
+  vm.objects = NULL;
   while (lexer.next.type != TOKEN_EOF && !parser.is_error && !parse_err) {
     parse_err = parse(&parser);
   }
@@ -59,6 +59,7 @@ void run_file(const char* path)
   printf("\n%s\n\n", interpreter_status(res));
   free_chunk(parser.chunk);
   free(source);
+  free_vm();
 }
 
 char* read_file(const char* path)

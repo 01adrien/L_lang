@@ -1,13 +1,26 @@
-string ::= "a-z|A-Z"*
-number ::= 0-9*
-id ::= number* U string* 
-literal ::=  number | string | "true" | "false" | "nil" ;
-expression ::=  literal | unary | binary | grouping | assignement;
+string ::= "a-z|A-Z"+
+
+number ::= 0-9+
+
+id ::= number+ U string+ 
+
+literal ::=  number | string | "true" | 
+            "false" | "nil" ;
+
+expression ::=  literal | unary | binary | 
+               grouping | assignement;
+
 grouping ::=  "(" expression ")" ;
+
 unary ::= ( "-" | "!" ) expression ;
+
 binary ::=  expression operator expression ;
-operator ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/" ;
+
+operator ::= "==" | "!=" | "<" | "<=" | ">" |
+             ">=" | "+"  | "-" | "*"  | "/" ;
+
+assignement ::= "var" id "=" expression
 
 statement ::= assignement | expression ";" ;
-assignement ::= "var" id "=" expression
+
 

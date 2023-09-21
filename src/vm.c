@@ -147,7 +147,7 @@ void reset_vm(chunk_t* chunk)
   vm.chunk = chunk;
   table_init(&vm.globals);
   table_init(&vm.strings);
-  vm.objects = NULL;
+  // vm.objects = NULL;
 }
 
 void free_vm()
@@ -217,9 +217,8 @@ value_t concatenate()
   memcpy(new, s2, strlen(s2));
   memcpy(new + strlen(s2), s1, strlen(s1));
   new[len] = '\0';
-  // free(s1);
-  // free(s2);
-  return STRING_VAL(new);
+  object_t* str = allocate_object(len, STRING_VAL(new));
+  return str->value;
 }
 
 interpret_result_t binary_operation(char sign)

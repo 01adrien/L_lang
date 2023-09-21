@@ -12,7 +12,7 @@ uint32_t hash_string(const char* key, int length);
 void table_init(table_t* table)
 {
   table->count = 0;
-  table->capacity = 10;
+  table->capacity = 100;
   table->entries = ALLOCATE(entry_t, table->capacity);
   for (int i = 0; i < table->capacity; i++) {
     table->entries[i].key = NULL;
@@ -50,10 +50,10 @@ bool table_set(table_t* table, const char* key, value_t value)
   uint32_t hash = hash_string(key, strlen(key));
   size_t index = (size_t) (hash & (uint64_t) (table->capacity - 1));
   while (entries[index].key != NULL) {
-    // if (strcmp(key, entries[index].key) == 0) {
-    //   table->entries[index].value = value;
-    //   return true;
-    // }
+    if (strcmp(key, entries[index].key) == 0) {
+      table->entries[index].value = value;
+      return true;
+    }
     index++;
     if (index >= table->capacity) {
       index = 0;

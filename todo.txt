@@ -2,5 +2,4 @@
 - continue hashtable
 - resize down hashtable
 - string interning
-- begin GC
 - vm and synthax error msg
