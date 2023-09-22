@@ -19,11 +19,13 @@ binary ::= expression operator expression
 operator ::= "==" | "!=" | "<" | "<=" | ">" |
              ">=" | "+"  | "-" | "*"  | "/" 
 
-statement ::= assignement | expression | print ";"
+statement ::= assignement | expression | print | block
 
-assignement ::= "var" id "=" expression | id "=" expression ";"
+assignement ::= "var" id "=" expression | id "=" expression 
 
-print ::= "print ("expression");"
+print ::= "print ("expression*")"
+
+block = "{"statement*"}"
 
 
 

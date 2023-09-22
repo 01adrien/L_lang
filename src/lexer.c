@@ -64,6 +64,10 @@ token_t scan_token(scanner_t* scanner)
     return make_token(TOKEN_LEFT_PAREN, scanner, PREC_NONE);
   case ')':
     return make_token(TOKEN_RIGHT_PAREN, scanner, PREC_NONE);
+  case '{':
+    return make_token(TOKEN_LEFT_BRACE, scanner, PREC_NONE);
+  case '}':
+    return make_token(TOKEN_RIGHT_BRACE, scanner, PREC_NONE);
   case '"':
     return token_string(scanner);
   case '>':
@@ -180,6 +184,10 @@ char* type(token_t token)
     return "LEFT PAREN";
   case TOKEN_RIGHT_PAREN:
     return "RIGHT PAREN";
+  case TOKEN_RIGHT_BRACE:
+    return "RIGHT BRACE";
+  case TOKEN_LEFT_BRACE:
+    return "LEFT BRACE";
   case TOKEN_IDENTIFIER:
     return "IDENTIFIER";
   case TOKEN_NEWLINE:
