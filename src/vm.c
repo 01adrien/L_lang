@@ -1,11 +1,11 @@
 #include "includes/vm.h"
 #include "includes/chunk.h"
+#include "includes/memory.h"
 #include <stdio.h>
 
 void reset_vm(chunk_t* chunk);
 void print_vm_stack();
 void push(value_t value);
-bool equality();
 value_t concatenate();
 value_t pop();
 interpret_result_t binary_operation(char sign);
@@ -35,7 +35,7 @@ interpret_result_t run_vm(chunk_t* chunk)
     }
     case OP_ADD: {
       if (IS_STRING(peek_stack(0)) && IS_STRING(peek_stack(1))) {
-        push(concatenate());
+        push(concatenate_string(AS_STRING(pop()), AS_STRING(pop())));
       }
       else if (IS_NUMBER(peek_stack(0)) && IS_NUMBER(peek_stack(1))) {
         binary_operation('+');
@@ -84,7 +84,7 @@ interpret_result_t run_vm(chunk_t* chunk)
       break;
     }
     case OP_EQUAL: {
-      push(equality() ? TRUE_VAL : FALSE_VAL);
+      push(values_equal(pop(), pop()) ? TRUE_VAL : FALSE_VAL);
       break;
     }
     case OP_TRUE: {
@@ -127,6 +127,7 @@ interpret_result_t run_vm(chunk_t* chunk)
     case OP_SET_GLOBAL: {
       char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
       value_t var = pop();
+      table_set(&vm.globals, name, var);
       break;
     }
     case OP_RETURN: {
@@ -138,6 +139,7 @@ interpret_result_t run_vm(chunk_t* chunk)
       return ERROR_UNKNOWN_OPCODE;
     }
   }
+  return ERROR_END_OF_STREAM;
 }
 
 void reset_vm(chunk_t* chunk)
@@ -145,9 +147,13 @@ void reset_vm(chunk_t* chunk)
   vm.stack_top = vm.stack;
   vm.ip = chunk->OPcodes;
   vm.chunk = chunk;
+}
+
+void init_vm()
+{
   table_init(&vm.globals);
   table_init(&vm.strings);
-  // vm.objects = NULL;
+  vm.objects = NULL;
 }
 
 void free_vm()
@@ -184,41 +190,10 @@ value_t peek_stack(int n)
   return vm.stack_top[-1 - n];
 }
 
-bool equality()
-{
-  value_t v1 = pop();
-  value_t v2 = pop();
-  if (type_of(v1) != type_of(v2)) {
-    return false;
-  }
-  switch (type_of(v1)) {
-  case NUMBER_T:
-    return AS_NUMBER(v1) == AS_NUMBER(v2);
-  case NIL_T:
-    return true;
-  case BOOLEAN_T:
-    return AS_BOOLEAN(v1) == AS_BOOLEAN(v2);
-  case STRING_T: {
-    char* s1 = AS_STRING(v1);
-    char* s2 = AS_STRING(v2);
-    return strlen(s1) == strlen(s2) && memcmp(s1, s2, strlen(s1)) == 0;
-  }
-  default:
-    return false;
-  }
-}
-
 value_t concatenate()
 {
   char* s1 = AS_STRING(pop());
   char* s2 = AS_STRING(pop());
-  int len = strlen(s1) + strlen(s2) + 1;
-  char* new = calloc(len, sizeof(char));
-  memcpy(new, s2, strlen(s2));
-  memcpy(new + strlen(s2), s1, strlen(s1));
-  new[len] = '\0';
-  object_t* str = allocate_object(len, STRING_VAL(new));
-  return str->value;
 }
 
 interpret_result_t binary_operation(char sign)

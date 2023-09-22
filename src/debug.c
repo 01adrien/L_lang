@@ -19,7 +19,7 @@ void debug_chunk(chunk_t* chunk, const char* name)
 int debug_instruction(chunk_t* chunk, int offset)
 {
   // implement constant 16
-  printf("%2d | ", offset);
+  printf("%4d | ", offset);
   OPcode_t instruction = chunk->OPcodes[offset];
   switch (instruction) {
   case OP_RETURN:

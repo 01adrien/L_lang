@@ -4,23 +4,26 @@ number ::= 0-9+
 
 id ::= number+ U string+ 
 
-literal ::=  number | string | "true" | 
-            "false" | "nil" ;
+literal ::= number | string  |  id
+            "true" | "false" | "nil"   
 
-expression ::=  literal | unary | binary | 
-               grouping | assignement;
+expression ::= literal  | unary | binary | 
+               grouping | assignement
 
-grouping ::=  "(" expression ")" ;
+grouping ::=  "("expression")" 
 
-unary ::= ( "-" | "!" ) expression ;
+unary ::= ( "-" | "!" ) expression 
 
-binary ::=  expression operator expression ;
+binary ::= expression operator expression 
 
 operator ::= "==" | "!=" | "<" | "<=" | ">" |
-             ">=" | "+"  | "-" | "*"  | "/" ;
+             ">=" | "+"  | "-" | "*"  | "/" 
 
-assignement ::= "var" id "=" expression
+statement ::= assignement | expression | print ";"
 
-statement ::= assignement | expression ";" ;
+assignement ::= "var" id "=" expression | id "=" expression ";"
+
+print ::= "print ("expression");"
+
 
 

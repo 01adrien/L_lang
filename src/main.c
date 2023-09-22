@@ -1,4 +1,5 @@
 #include "includes/chunk.h"
+#include "includes/compiler.h"
 #include "includes/debug.h"
 #include "includes/lexer.h"
 #include "includes/parser.h"
@@ -19,12 +20,14 @@ token_stack_t token_stack;
 
 int main(int argc, char const* argv[])
 {
+  init_vm();
   if (argc == 2) {
     run_file(argv[1]);
   }
   if (argc == 1) {
     repl();
   }
+  free_vm();
 }
 
 void repl()
@@ -36,30 +39,26 @@ void run_file(const char* path)
 {
   char* source = read_file(path);
   init_scanner(source, &scanner);
-  init_parser(&lexer, &scanner, &parser, &chunk, &token_stack, &token_queue);
+  init_parser(&lexer, &scanner, &parser, &token_stack, &token_queue);
   advance_lexer(&lexer, &scanner);
   parsing_error_t parse_err = NULL;
-  vm.objects = NULL;
-  while (lexer.next.type != TOKEN_EOF && !parser.is_error && !parse_err) {
+  while (lexer.next.type != TOKEN_EOF) {
     parse_err = parse(&parser);
   }
   if (parse_err || parser.is_error) {
     printf("%s\n", parse_err ? parse_err : parser.error);
-    free_chunk(parser.chunk);
     return;
   }
-  generate_btc(&parser);
-  emit_byte(parser.chunk, OP_RETURN);
+  compile_btc(parser.queue, &chunk);
 #ifdef DEBUG_PRINT_BYTECODE
-  debug_chunk(parser.chunk, "byte code");
   printf("\n");
+  debug_chunk(&chunk, "byte code");
 #endif
   printf("\n");
-  interpret_result_t res = run_vm(parser.chunk);
+  interpret_result_t res = run_vm(&chunk);
   printf("\n%s\n\n", interpreter_status(res));
-  free_chunk(parser.chunk);
+  free_chunk(&chunk);
   free(source);
-  free_vm();
 }
 
 char* read_file(const char* path)

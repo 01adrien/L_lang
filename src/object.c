@@ -13,19 +13,37 @@ object_t* allocate_object(size_t size, value_t value)
   object->value = value;
   object->next = vm.objects;
   vm.objects = object;
-  // if (type_of(value) == STRING_T) {
-  //   table_set(&vm.strings, AS_STRING(value), NIL_VAL);
-  // }
   return object;
 }
 
-object_t* allocate_string(const char* str, int len)
+object_t* allocate_string(char* str)
 {
-  char* chars = calloc(len, sizeof(char));
-  memcpy(chars, str, len);
-  value_t value = STRING_VAL(chars);
+  value_t value = STRING_VAL(str);
   object_t* string = allocate_object(1, value);
+  table_set(&vm.strings, AS_STRING(value), value);
   return string;
+}
+
+value_t get_string(char* string)
+{
+  value_t interned_str = table_get(&vm.strings, string);
+  if (!IS_NIL(interned_str)) {
+    FREE(string, char);
+    return interned_str;
+  }
+  object_t* new_str = allocate_string(string);
+  return new_str->value;
+}
+
+value_t concatenate_string(char* s2, char* s1)
+{
+  int len = strlen(s1) + strlen(s2) + 1;
+  char* new = ALLOCATE(char, len);
+  memcpy(new, s2, strlen(s2));
+  memcpy(new + strlen(s2), s1, strlen(s1));
+  new[len] = '\0';
+  value_t str = get_string(new);
+  return str;
 }
 
 void free_objects()

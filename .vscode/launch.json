@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build",
-      "args": ["${workspaceFolder}/prog.rb"],
+      "args": ["${workspaceFolder}/prog.lang"],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],

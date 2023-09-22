@@ -1,7 +1,6 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
-#include "chunk.h"
 #include "common.h"
 #include "lexer.h"
 #include "scanner.h"
@@ -33,12 +32,12 @@ typedef struct parser {
   token_stack_t* stack;
 } parser_t;
 
-parsing_error_t parse(parser_t* parser);
 void init_parser(
-    lexer_t* lexer, scanner_t* scanner, parser_t* parser, chunk_t* chunk,
-    token_stack_t* stack, token_queue_t* queue
+    lexer_t* lexer, scanner_t* scanner, parser_t* parser, token_stack_t* stack,
+    token_queue_t* queue
 );
-
-void generate_btc(parser_t* parser);
+parsing_error_t parse(parser_t* parser);
+token_t get_token(node_t* node);
+node_t* dequeue_token(token_queue_t* queue);
 
 #endif   // !_PARSER_H_

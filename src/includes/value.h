@@ -66,5 +66,6 @@ typedef enum value_type {
 
 void print_value(value_t value);
 value_type_t type_of(value_t value);
+bool values_equal(value_t v1, value_t v2);
 
-#endif   // !1
+#endif
