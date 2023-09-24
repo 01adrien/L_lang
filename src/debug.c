@@ -64,6 +64,13 @@ int debug_instruction(chunk_t* chunk, int offset)
     return constant_8_instruction("OP_GET_GLOBAL", offset, chunk);
   case OP_SET_GLOBAL:
     return constant_8_instruction("OP_SET_GLOBAL", offset, chunk);
+  case OP_GET_LOCAL:
+    offset++;
+    return basic_instruction("OP_GET_LOCAL", offset);
+    break;
+  case OP_SET_LOCAL:
+    offset++;
+    return basic_instruction("OP_SET_LOCAL", offset);
   default:
     printf("unknow OP code. [%d]\n", instruction);
     break;

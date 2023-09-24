@@ -8,7 +8,7 @@ print("hello world");
 var name = "bob";
 print(name);
 var money = "45$";
-print("Hey " + name + " give me " + money + " !");
+print("Hey " + name + " give me " + money + ".");
 var num = 5;
 print(num + 5 * 10);
 var a = -90;
@@ -19,3 +19,8 @@ print(b);
 var str = "test string";
 var test = str == "test string";
 print(test);
+
+{
+  var local = 456;
+  print(local);
+};

@@ -1,31 +1,35 @@
 #include "includes/compiler.h"
 #include "includes/chunk.h"
+#include "includes/debug.h"
 #include "includes/memory.h"
 #include "includes/value.h"
 #include <stdio.h>
 
 value_t string(token_t token);
-uint16_t get_constant_var(chunk_t* chunk, token_t token);
-void compile_one_btc(token_queue_t* queue, chunk_t* chunk);
-void compile_expression_btc(token_queue_t* queue, chunk_t* chunk);
+uint16_t parse_variable(token_t token, compiler_t* compiler);
+int resolve_local(token_t name, compiler_t* compiler);
+uint16_t get_constant_index(chunk_t* chunk, token_t token);
+void declare_local(token_t name, compiler_t* compiler);
+bool id_equal(token_t id1, token_t id2);
+void compile_to(token_type_t token, compiler_t* compiler);
+void begin_block(compiler_t* compiler);
+void end_block(compiler_t* compiler);
+void var_declaration(compiler_t* compiler);
+void get_set_id(token_t token, compiler_t* compiler);
+void compile(compiler_t* compiler);
 
-void compile_btc(token_queue_t* queue, chunk_t* chunk)
+void init_compiler(compiler_t* compiler, chunk_t* chunk, token_queue_t* queue)
 {
-  while (queue->head) {
-    compile_one_btc(queue, chunk);
-  }
-  emit_byte(chunk, OP_RETURN);
+  compiler->local_count = 0;
+  compiler->scope_depth = 0;
+  compiler->chunk = chunk;
+  compiler->queue = queue;
 }
 
-void compile_expression_btc(token_queue_t* queue, chunk_t* chunk)
+void compile(compiler_t* compiler)
 {
-  while (queue->head->token.type != TOKEN_SEMICOLON) {
-    compile_one_btc(queue, chunk);
-  }
-}
-
-void compile_one_btc(token_queue_t* queue, chunk_t* chunk)
-{
+  token_queue_t* queue = compiler->queue;
+  chunk_t* chunk = compiler->chunk;
   if (queue->head) {
     token_t token = get_token(dequeue_token(queue));
     switch (token.type) {
@@ -83,48 +87,165 @@ void compile_one_btc(token_queue_t* queue, chunk_t* chunk)
     case TOKEN_NIL:
       emit_byte(chunk, OP_NIL);
       break;
-    case TOKEN_PRINT: {
-      compile_expression_btc(queue, chunk);
+    case TOKEN_PRINT:
+      compile_to(TOKEN_SEMICOLON, compiler);
       emit_byte(chunk, OP_PRINT);
       break;
-    }
-    case TOKEN_VAR: {
-      token_t name = get_token(dequeue_token(queue));
-      uint16_t index = get_constant_var(chunk, name);
-      token_t next = get_token(dequeue_token(queue));
-      if (next.type == TOKEN_EQUAL) {
-        compile_expression_btc(queue, chunk);
-        emit_bytes(chunk, OP_DEFINE_GLOBAL, index);
-      }
-      else {
-        emit_byte(chunk, OP_NIL);
-      }
+    case TOKEN_VAR:
+      var_declaration(compiler);
       break;
-    }
-    case TOKEN_IDENTIFIER: {
-      uint16_t index = get_constant_var(chunk, token);
-      if (queue->head->token.type == TOKEN_EQUAL) {
-        FREE(dequeue_token(queue), node_t);
-        compile_expression_btc(queue, chunk);
-        emit_bytes(chunk, OP_SET_GLOBAL, index);
-      }
-      else {
-        emit_bytes(chunk, OP_GET_GLOBAL, index);
-      }
+    case TOKEN_IDENTIFIER:
+      get_set_id(token, compiler);
       break;
-    }
+    case TOKEN_LEFT_BRACE:
+      begin_block(compiler);
+      break;
+    case TOKEN_RIGHT_BRACE:
+      end_block(compiler);
+      break;
+    case TOKEN_RIGHT_PAREN:
+    case TOKEN_LEFT_PAREN:
+    case TOKEN_SEMICOLON:
+      break;
+    case TOKEN_NEWLINE:
+      compile_to(TOKEN_SEMICOLON, compiler);
+      break;
     default:
       return;
     }
   }
 }
 
-uint16_t get_constant_var(chunk_t* chunk, token_t token)
+compile_error_t compilation(compiler_t* compiler)
+{
+  while (compiler->queue->head) {
+    compile(compiler);
+  }
+  emit_byte(compiler->chunk, OP_RETURN);
+}
+
+void compile_to(token_type_t token, compiler_t* compiler)
+{
+  token_queue_t* queue = compiler->queue;
+  chunk_t* chunk = compiler->chunk;
+  if (!queue->head) {
+    return;
+  }
+  while (queue->head && queue->head->token.type != token) {
+    compile(compiler);
+  }
+}
+
+void begin_block(compiler_t* compiler)
+{
+  compiler->scope_depth++;
+  compile_to(TOKEN_RIGHT_BRACE, compiler);
+}
+
+void end_block(compiler_t* compiler)
+{
+  chunk_t* chunk = compiler->chunk;
+  compiler->scope_depth--;
+  while (compiler->local_count > 0
+         && compiler->locals[compiler->local_count - 1].depth
+                > compiler->scope_depth) {
+    emit_byte(chunk, OP_POP);
+    compiler->local_count--;
+  }
+}
+
+void var_declaration(compiler_t* compiler)
+{
+  token_queue_t* queue = compiler->queue;
+  chunk_t* chunk = compiler->chunk;
+  token_t name = get_token(dequeue_token(queue));
+  uint16_t index = parse_variable(name, compiler);
+  token_t next = get_token(dequeue_token(queue));
+  if (next.type == TOKEN_EQUAL) {
+    compile_to(TOKEN_SEMICOLON, compiler);
+  }
+  else {
+    emit_byte(chunk, OP_NIL);
+  }
+  if (compiler->scope_depth == 0) {
+    emit_bytes(chunk, OP_DEFINE_GLOBAL, index);
+  }
+}
+
+void get_set_id(token_t token, compiler_t* compiler)
+{
+  token_queue_t* queue = compiler->queue;
+  chunk_t* chunk = compiler->chunk;
+  uint16_t get_OP, set_OP;
+  int index = resolve_local(token, compiler);
+  if (index == -1) {
+    index = get_constant_index(chunk, token);
+    get_OP = OP_GET_GLOBAL;
+    set_OP = OP_SET_GLOBAL;
+  }
+  else {
+    get_OP = OP_GET_LOCAL;
+    set_OP = OP_SET_LOCAL;
+  }
+  if (queue->head->token.type == TOKEN_EQUAL) {
+    FREE(dequeue_token(queue), node_t);
+    compile_to(TOKEN_SEMICOLON, compiler);
+    emit_bytes(chunk, set_OP, (uint16_t) index);
+  }
+  else {
+    emit_bytes(chunk, get_OP, (uint16_t) index);
+  }
+}
+
+uint16_t parse_variable(token_t token, compiler_t* compiler)
+{
+  chunk_t* chunk = compiler->chunk;
+  declare_local(token, compiler);
+  if (compiler->scope_depth > 0) {
+    return 0;
+  }
+  return get_constant_index(chunk, token);
+}
+
+uint16_t get_constant_index(chunk_t* chunk, token_t token)
 {
   char* s = calloc(token.length, sizeof(char));
   memcpy(s, token.start, token.length);
   value_t str = get_string(s);
   return write_constant(chunk, str);
+}
+
+void declare_local(token_t name, compiler_t* compiler)
+{
+  if (compiler->scope_depth == 0) {
+    return;
+  }
+  if (compiler->local_count == UINT8_COUNT) {
+    printf("Error: too many local variables in function.");
+    exit(0);
+  }
+  local_t* local = &compiler->locals[compiler->local_count++];
+  local->depth = compiler->scope_depth;
+  local->name = name;
+}
+
+int resolve_local(token_t name, compiler_t* compiler)
+{
+  for (int i = compiler->local_count - 1; i >= 0; i--) {
+    local_t local = compiler->locals[i];
+    if (id_equal(local.name, name) && compiler->scope_depth == local.depth) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+bool id_equal(token_t id1, token_t id2)
+{
+  if (id1.length != id2.length) {
+    return false;
+  }
+  return memcmp(id1.start, id2.start, id1.length) == 0;
 }
 
 value_t string(token_t token)

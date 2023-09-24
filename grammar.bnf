@@ -10,7 +10,7 @@ literal ::= number | string  |  id
 expression ::= literal  | unary | binary | 
                grouping | assignement
 
-grouping ::=  "("expression")" 
+grouping ::=  "(" expression ")" 
 
 unary ::= ( "-" | "!" ) expression 
 
@@ -23,9 +23,9 @@ statement ::= assignement | expression | print | block
 
 assignement ::= "var" id "=" expression | id "=" expression 
 
-print ::= "print ("expression*")"
+print ::= "print (" expression* ")"
 
-block = "{"statement*"}"
+block = "{" statement* "}"
 
 
 

@@ -1,9 +1,9 @@
 #include "includes/parser.h"
 #include "includes/memory.h"
 #include "includes/vm.h"
+#include <stdarg.h>
 #include <stdio.h>
 
-// Parsing rules
 void expression(parser_t* parser);
 void binary(parser_t* parser);
 void literal(parser_t* parser);
@@ -13,14 +13,10 @@ void unary(parser_t* parser);
 void statement(parser_t* parser);
 void assignement(parser_t* parser);
 
-// Shunting yard
-void print_queue(token_queue_t* queue);
-void print_stack(token_stack_t* stack);
-void enqueue_token(parser_t* parser, token_t token);
-void push_token(parser_t* parser, token_t token);
-node_t* pop_token(token_stack_t* stack);
-node_t* create_node(token_t token);
-node_t* peek_queue(token_queue_t* queue);
+void error_parser(char* msg, ...);
+
+int paren_L_count;
+int paren_R_count;
 
 void init_parser(
     lexer_t* lexer, scanner_t* scanner, parser_t* parser, token_stack_t* stack,
@@ -35,9 +31,9 @@ void init_parser(
   parser->queue->head = NULL;
   parser->error = NULL;
   parser->stack->top = NULL;
+  paren_L_count = 0;
+  paren_R_count = 0;
 }
-
-vm_t vm_copy2;
 
 parsing_error_t parse(parser_t* parser)
 {
@@ -48,12 +44,14 @@ parsing_error_t parse(parser_t* parser)
   while (lexer->next.type != TOKEN_EOF) {
     advance_lexer(lexer, scanner);
     expression(parser);
+    if (parser->is_error) {
+      return "error";
+    }
   }
-
   while (stack->top) {
     enqueue_token(parser, get_token(pop_token(stack)));
   }
-#ifdef DEBUG_PRINT_QUEUE
+#ifdef DEBUG_PRINT_TOKEN_QUEUE
   print_queue(parser->queue);
 #endif
 }
@@ -96,17 +94,42 @@ void expression(parser_t* parser)
   case TOKEN_SEMICOLON:
     statement(parser);
     break;
-  case TOKEN_LEFT_PAREN:
-    push_token(parser, token);
+  case TOKEN_NEWLINE:
+    if (lexer->previous.type != TOKEN_SEMICOLON
+        && lexer->previous.type != TOKEN_LEFT_BRACE
+        && lexer->previous.type != TOKEN_NEWLINE) {
+      error_parser("missing ';' after statement at line %d.\n", token.line);
+      parser->is_error = true;
+      return;
+    }
+    if (paren_L_count != paren_R_count) {
+      error_parser("unmatched parenthesis at line %d\n", token.line - 1);
+      parser->is_error = true;
+      paren_L_count = paren_R_count = 0;
+      return;
+    }
     break;
+  case TOKEN_LEFT_BRACE:
+  case TOKEN_RIGHT_BRACE:
   case TOKEN_PRINT:
     enqueue_token(parser, token);
     break;
+  case TOKEN_LEFT_PAREN:
+    paren_L_count++;
+    enqueue_token(parser, token);
+    push_token(parser, token);
+    break;
   case TOKEN_RIGHT_PAREN:
+    paren_R_count++;
     grouping(parser);
     break;
   case TOKEN_EMPTY:
   case TOKEN_EOF:
+    return;
+  case TOKEN_ERROR:
+    error_parser("%s at line %d.\n", token.start, token.line);
+    parser->is_error = true;
+    exit(0);
     return;
   default:
     printf("Unknow token : ");
@@ -139,6 +162,7 @@ void grouping(parser_t* parser)
   if (node && node->token.type == TOKEN_LEFT_PAREN) {
     FREE(node, node_t);
   }
+  enqueue_token(parser, parser->lexer->current);
 }
 
 void unary(parser_t* parser)
@@ -185,6 +209,15 @@ void statement(parser_t* parser)
 void assignement(parser_t* parser)
 {
   enqueue_token(parser, parser->lexer->current);
+}
+
+void error_parser(char* msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_end(args);
+  fprintf(stderr, "Error: ");
+  vfprintf(stderr, msg, args);
 }
 
 //*************** SHUNTING YARD ****************//
@@ -285,4 +318,14 @@ node_t* create_node(token_t token)
   node->token = token;
   node->next = NULL;
   return node;
+}
+
+void free_queue(token_queue_t* queue)
+{
+  node_t* temp = queue->head;
+  while (temp) {
+    node_t* del = temp;
+    temp = temp->next;
+    free(del);
+  }
 }

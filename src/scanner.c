@@ -27,10 +27,9 @@ void skip_blanks(scanner_t* scanner)
     case ' ':
     case '\r':
     case '\t':
-    case '\n':
       advance_scanner(scanner);
       break;
-    case '#':
+    case '/':
       while (scanner->current[1] != ';') {
         advance_scanner(scanner);
       }

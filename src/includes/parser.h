@@ -6,7 +6,7 @@
 #include "scanner.h"
 #include "vm.h"
 
-typedef const char* parsing_error_t;
+typedef char* parsing_error_t;
 typedef struct node node_t;
 
 struct node {
@@ -39,5 +39,14 @@ void init_parser(
 parsing_error_t parse(parser_t* parser);
 token_t get_token(node_t* node);
 node_t* dequeue_token(token_queue_t* queue);
+
+void print_queue(token_queue_t* queue);
+void print_stack(token_stack_t* stack);
+void enqueue_token(parser_t* parser, token_t token);
+void push_token(parser_t* parser, token_t token);
+node_t* pop_token(token_stack_t* stack);
+node_t* create_node(token_t token);
+node_t* peek_queue(token_queue_t* queue);
+void free_queue(token_queue_t* queue);
 
 #endif   // !_PARSER_H_

@@ -17,6 +17,7 @@ parser_t parser;
 chunk_t chunk;
 token_queue_t token_queue;
 token_stack_t token_stack;
+compiler_t compiler;
 
 int main(int argc, char const* argv[])
 {
@@ -41,19 +42,27 @@ void run_file(const char* path)
   init_scanner(source, &scanner);
   init_parser(&lexer, &scanner, &parser, &token_stack, &token_queue);
   advance_lexer(&lexer, &scanner);
-  parsing_error_t parse_err = NULL;
+  parsing_error_t err1 = NULL;
   while (lexer.next.type != TOKEN_EOF) {
-    parse_err = parse(&parser);
+    err1 = parse(&parser);
   }
-  if (parse_err || parser.is_error) {
-    printf("%s\n", parse_err ? parse_err : parser.error);
+  if (parser.is_error) {
+    free_queue(parser.queue);
+    free_chunk(&chunk);
+    free(source);
+    free(parser.error);
     return;
   }
-  compile_btc(parser.queue, &chunk);
+  init_compiler(&compiler, &chunk, parser.queue);
+  compile_error_t err2 = NULL;
+  err2 = compilation(&compiler);
+
 #ifdef DEBUG_PRINT_BYTECODE
   printf("\n");
   debug_chunk(&chunk, "byte code");
 #endif
+  /*
+   */
   printf("\n");
   interpret_result_t res = run_vm(&chunk);
   printf("\n%s\n\n", interpreter_status(res));

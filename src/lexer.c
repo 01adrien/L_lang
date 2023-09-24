@@ -95,7 +95,11 @@ token_t scan_token(scanner_t* scanner)
     return make_token(TOKEN_SEMICOLON, scanner, PREC_NONE);
   case '\n':
     return make_token(TOKEN_NEWLINE, scanner, PREC_NONE);
+  case '$':
+  case '.':
+    break;
   default:
+    printf("[ %c ]\n", c);
     return token_error("unknow token.", scanner);
   }
 }

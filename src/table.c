@@ -1,6 +1,7 @@
 #include "includes/table.h"
 #include "includes/memory.h"
 #include "includes/value.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

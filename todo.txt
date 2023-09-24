@@ -1,4 +1,4 @@
-- handle op constant 16 in debug.c and everywhere
+- handle op constant 16 everywhere (debug, var, ...)
 - continue hashtable
 - resize down hashtable
-- vm and synthax error msg
+- init var with null values

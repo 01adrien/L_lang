@@ -6,7 +6,6 @@
 void reset_vm(chunk_t* chunk);
 void print_vm_stack();
 void push(value_t value);
-value_t concatenate();
 value_t pop();
 interpret_result_t binary_operation(char sign);
 value_t peek_stack(int n);
@@ -118,7 +117,7 @@ interpret_result_t run_vm(chunk_t* chunk)
       const char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
       value_t var = table_get(&vm.globals, name);
       if (IS_NIL(var)) {
-        printf("unbound variable '%s'\n", name);
+        printf("Error: unbound variable '%s'\n", name);
         return ERROR_RUNTIME_EXCEPTION;
       }
       push(var);
@@ -128,6 +127,16 @@ interpret_result_t run_vm(chunk_t* chunk)
       char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
       value_t var = pop();
       table_set(&vm.globals, name, var);
+      break;
+    }
+    case OP_GET_LOCAL: {
+      uint8_t slot = *vm.ip++;
+      push(vm.stack[slot]);
+      break;
+    }
+    case OP_SET_LOCAL: {
+      uint8_t slot = *vm.ip++;
+      vm.stack[slot] = peek_stack(0);
       break;
     }
     case OP_RETURN: {
@@ -188,12 +197,6 @@ value_t pop()
 value_t peek_stack(int n)
 {
   return vm.stack_top[-1 - n];
-}
-
-value_t concatenate()
-{
-  char* s1 = AS_STRING(pop());
-  char* s2 = AS_STRING(pop());
 }
 
 interpret_result_t binary_operation(char sign)

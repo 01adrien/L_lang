@@ -11,6 +11,8 @@
 
 // #define DEBUG_STACK_TRACE_EXECUTION
 // #define DEBUG_PRINT_BYTECODE
-// #define DEBUG_PRINT_QUEUE
+// #define DEBUG_PRINT_TOKEN_QUEUE
+
+#define UINT8_COUNT (UINT8_MAX + 1)
 
 #endif   // !
