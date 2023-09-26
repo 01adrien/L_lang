@@ -2,3 +2,4 @@
 - continue hashtable
 - resize down hashtable
 - init var with null values
+- track scope for error reporting

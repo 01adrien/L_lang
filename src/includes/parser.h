@@ -27,7 +27,6 @@ typedef struct parser {
   scanner_t* scanner;
   chunk_t* chunk;
   bool is_error;
-  parsing_error_t error;
   token_queue_t* queue;
   token_stack_t* stack;
 } parser_t;

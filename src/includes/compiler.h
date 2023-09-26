@@ -17,6 +17,7 @@ typedef struct {
   int scope_depth;
   token_queue_t* queue;
   chunk_t* chunk;
+  bool is_error;
 } compiler_t;
 
 compile_error_t compilation(compiler_t* compiler);

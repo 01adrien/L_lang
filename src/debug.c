@@ -5,6 +5,7 @@
 int basic_instruction(const char* name, int offset);
 int constant_8_instruction(const char* name, int offset, chunk_t* chunk);
 int constant_16_instruction(const char* name, int offset, chunk_t* chunk);
+int byte_instruction(const char* name, int offset, chunk_t* chunk);
 
 void debug_chunk(chunk_t* chunk, const char* name)
 {
@@ -65,12 +66,10 @@ int debug_instruction(chunk_t* chunk, int offset)
   case OP_SET_GLOBAL:
     return constant_8_instruction("OP_SET_GLOBAL", offset, chunk);
   case OP_GET_LOCAL:
-    offset++;
-    return basic_instruction("OP_GET_LOCAL", offset);
+    return byte_instruction("OP_GET_LOCAL", offset, chunk);
     break;
   case OP_SET_LOCAL:
-    offset++;
-    return basic_instruction("OP_SET_LOCAL", offset);
+    return byte_instruction("OP_SET_LOCAL", offset, chunk);
   default:
     printf("unknow OP code. [%d]\n", instruction);
     break;
@@ -88,6 +87,13 @@ int constant_8_instruction(const char* name, int offset, chunk_t* chunk)
   printf("%s : ", name);
   print_value(chunk->constants.values[chunk->OPcodes[++offset]]);
   printf("\n");
+  return offset + 1;
+}
+
+int byte_instruction(const char* name, int offset, chunk_t* chunk)
+{
+  printf("%s : ", name);
+  printf("%d \n", chunk->OPcodes[++offset]);
   return offset + 1;
 }
 

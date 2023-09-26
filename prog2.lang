@@ -1,6 +1,13 @@
-print("llll");
-
-
-
-
-print(4 + 5);
+{
+  var a = "hello";
+  {
+    var b = "world";
+    {
+      var a = "good bye";
+      var a = "good bye";
+      print(a);
+      print(b);
+    };
+  };
+  print(a);
+};

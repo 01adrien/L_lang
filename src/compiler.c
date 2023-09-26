@@ -3,6 +3,7 @@
 #include "includes/debug.h"
 #include "includes/memory.h"
 #include "includes/value.h"
+#include <stdarg.h>
 #include <stdio.h>
 
 value_t string(token_t token);
@@ -17,6 +18,7 @@ void end_block(compiler_t* compiler);
 void var_declaration(compiler_t* compiler);
 void get_set_id(token_t token, compiler_t* compiler);
 void compile(compiler_t* compiler);
+void error_compiler(char* msg, ...);
 
 void init_compiler(compiler_t* compiler, chunk_t* chunk, token_queue_t* queue)
 {
@@ -24,95 +26,95 @@ void init_compiler(compiler_t* compiler, chunk_t* chunk, token_queue_t* queue)
   compiler->scope_depth = 0;
   compiler->chunk = chunk;
   compiler->queue = queue;
+  compiler->is_error = false;
 }
 
 void compile(compiler_t* compiler)
 {
   token_queue_t* queue = compiler->queue;
   chunk_t* chunk = compiler->chunk;
-  if (queue->head) {
-    token_t token = get_token(dequeue_token(queue));
-    switch (token.type) {
-    case TOKEN_MINUS:
-      emit_byte(chunk, OP_SUBSTRACT);
-      break;
-    case TOKEN_PLUS:
-      emit_byte(chunk, OP_ADD);
-      break;
-    case TOKEN_STAR:
-      emit_byte(chunk, OP_MULTIPLY);
-      break;
-    case TOKEN_MINUS_UNARY:
-      emit_byte(chunk, OP_NEGATE);
-      break;
-    case TOKEN_SLASH:
-      emit_byte(chunk, OP_DIVIDE);
-      break;
-    case TOKEN_MODULO:
-      emit_byte(chunk, OP_MODULO);
-      break;
-    case TOKEN_GREATER:
-      emit_byte(chunk, OP_GREATER);
-      break;
-    case TOKEN_GREATER_EQUAL:
-      emit_bytes(chunk, OP_LESS, OP_NOT);
-      break;
-    case TOKEN_LESS:
-      emit_byte(chunk, OP_LESS);
-      break;
-    case TOKEN_LESS_EQUAL:
-      emit_bytes(chunk, OP_GREATER, OP_NOT);
-      break;
-    case TOKEN_BANG_EQUAL:
-      emit_bytes(chunk, OP_EQUAL, OP_NOT);
-      break;
-    case TOKEN_EQUAL_EQUAL:
-      emit_byte(chunk, OP_EQUAL);
-      break;
-    case TOKEN_BANG:
-      emit_byte(chunk, OP_NOT);
-      break;
-    case TOKEN_NUMBER:
-      emit_constant(chunk, NUMBER_VAL(strtod(token.start, NULL)));
-      break;
-    case TOKEN_STRING:
-      emit_constant(chunk, string(token));
-      break;
-    case TOKEN_TRUE:
-      emit_byte(chunk, OP_TRUE);
-      break;
-    case TOKEN_FALSE:
-      emit_byte(chunk, OP_FALSE);
-      break;
-    case TOKEN_NIL:
-      emit_byte(chunk, OP_NIL);
-      break;
-    case TOKEN_PRINT:
-      compile_to(TOKEN_SEMICOLON, compiler);
-      emit_byte(chunk, OP_PRINT);
-      break;
-    case TOKEN_VAR:
-      var_declaration(compiler);
-      break;
-    case TOKEN_IDENTIFIER:
-      get_set_id(token, compiler);
-      break;
-    case TOKEN_LEFT_BRACE:
-      begin_block(compiler);
-      break;
-    case TOKEN_RIGHT_BRACE:
-      end_block(compiler);
-      break;
-    case TOKEN_RIGHT_PAREN:
-    case TOKEN_LEFT_PAREN:
-    case TOKEN_SEMICOLON:
-      break;
-    case TOKEN_NEWLINE:
-      compile_to(TOKEN_SEMICOLON, compiler);
-      break;
-    default:
-      return;
-    }
+  token_t token = get_token(dequeue_token(queue));
+
+  switch (token.type) {
+  case TOKEN_MINUS:
+    emit_byte(chunk, OP_SUBSTRACT);
+    break;
+  case TOKEN_PLUS:
+    emit_byte(chunk, OP_ADD);
+    break;
+  case TOKEN_STAR:
+    emit_byte(chunk, OP_MULTIPLY);
+    break;
+  case TOKEN_MINUS_UNARY:
+    emit_byte(chunk, OP_NEGATE);
+    break;
+  case TOKEN_SLASH:
+    emit_byte(chunk, OP_DIVIDE);
+    break;
+  case TOKEN_MODULO:
+    emit_byte(chunk, OP_MODULO);
+    break;
+  case TOKEN_GREATER:
+    emit_byte(chunk, OP_GREATER);
+    break;
+  case TOKEN_GREATER_EQUAL:
+    emit_bytes(chunk, OP_LESS, OP_NOT);
+    break;
+  case TOKEN_LESS:
+    emit_byte(chunk, OP_LESS);
+    break;
+  case TOKEN_LESS_EQUAL:
+    emit_bytes(chunk, OP_GREATER, OP_NOT);
+    break;
+  case TOKEN_BANG_EQUAL:
+    emit_bytes(chunk, OP_EQUAL, OP_NOT);
+    break;
+  case TOKEN_EQUAL_EQUAL:
+    emit_byte(chunk, OP_EQUAL);
+    break;
+  case TOKEN_BANG:
+    emit_byte(chunk, OP_NOT);
+    break;
+  case TOKEN_NUMBER:
+    emit_constant(chunk, NUMBER_VAL(strtod(token.start, NULL)));
+    break;
+  case TOKEN_STRING:
+    emit_constant(chunk, string(token));
+    break;
+  case TOKEN_TRUE:
+    emit_byte(chunk, OP_TRUE);
+    break;
+  case TOKEN_FALSE:
+    emit_byte(chunk, OP_FALSE);
+    break;
+  case TOKEN_NIL:
+    emit_byte(chunk, OP_NIL);
+    break;
+  case TOKEN_PRINT:
+    compile_to(TOKEN_SEMICOLON, compiler);
+    emit_byte(chunk, OP_PRINT);
+    break;
+  case TOKEN_VAR:
+    var_declaration(compiler);
+    break;
+  case TOKEN_IDENTIFIER:
+    get_set_id(token, compiler);
+    break;
+  case TOKEN_LEFT_BRACE:
+    begin_block(compiler);
+    break;
+  case TOKEN_RIGHT_BRACE:
+    end_block(compiler);
+    break;
+  case TOKEN_RIGHT_PAREN:
+  case TOKEN_LEFT_PAREN:
+  case TOKEN_SEMICOLON:
+    break;
+  case TOKEN_NEWLINE:
+    compile_to(TOKEN_SEMICOLON, compiler);
+    break;
+  default:
+    return;
   }
 }
 
@@ -120,6 +122,9 @@ compile_error_t compilation(compiler_t* compiler)
 {
   while (compiler->queue->head) {
     compile(compiler);
+    if (compiler->is_error) {
+      return "compilation error";
+    }
   }
   emit_byte(compiler->chunk, OP_RETURN);
 }
@@ -160,8 +165,9 @@ void var_declaration(compiler_t* compiler)
   chunk_t* chunk = compiler->chunk;
   token_t name = get_token(dequeue_token(queue));
   uint16_t index = parse_variable(name, compiler);
-  token_t next = get_token(dequeue_token(queue));
-  if (next.type == TOKEN_EQUAL) {
+
+  if (queue->head->token.type == TOKEN_EQUAL) {
+    FREE(dequeue_token(queue), node_t);
     compile_to(TOKEN_SEMICOLON, compiler);
   }
   else {
@@ -178,6 +184,7 @@ void get_set_id(token_t token, compiler_t* compiler)
   chunk_t* chunk = compiler->chunk;
   uint16_t get_OP, set_OP;
   int index = resolve_local(token, compiler);
+
   if (index == -1) {
     index = get_constant_index(chunk, token);
     get_OP = OP_GET_GLOBAL;
@@ -221,8 +228,18 @@ void declare_local(token_t name, compiler_t* compiler)
     return;
   }
   if (compiler->local_count == UINT8_COUNT) {
-    printf("Error: too many local variables in function.");
-    exit(0);
+    fprintf(stderr, "too many local variables in function.");
+    compiler->is_error = true;
+  }
+  for (int i = compiler->local_count - 1; i >= 0; i--) {
+    local_t local = compiler->locals[i];
+    if (id_equal(local.name, name) && local.depth == compiler->scope_depth) {
+      error_compiler(
+          "already a variable with name '%.*s' in this scope at line %d",
+          name.length, name.start, name.line
+      );
+      compiler->is_error = true;
+    }
   }
   local_t* local = &compiler->locals[compiler->local_count++];
   local->depth = compiler->scope_depth;
@@ -233,7 +250,7 @@ int resolve_local(token_t name, compiler_t* compiler)
 {
   for (int i = compiler->local_count - 1; i >= 0; i--) {
     local_t local = compiler->locals[i];
-    if (id_equal(local.name, name) && compiler->scope_depth == local.depth) {
+    if (id_equal(local.name, name)) {
       return i;
     }
   }
@@ -242,10 +259,9 @@ int resolve_local(token_t name, compiler_t* compiler)
 
 bool id_equal(token_t id1, token_t id2)
 {
-  if (id1.length != id2.length) {
-    return false;
-  }
-  return memcmp(id1.start, id2.start, id1.length) == 0;
+  return id1.length != id2.length
+             ? false
+             : memcmp(id1.start, id2.start, id1.length) == 0;
 }
 
 value_t string(token_t token)
@@ -253,4 +269,14 @@ value_t string(token_t token)
   char* str = calloc(token.length - 2, sizeof(char));
   memcpy(str, token.start + 1, token.length - 2);
   return get_string(str);
+}
+
+void error_compiler(char* msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_end(args);
+  fprintf(stderr, "Error: ");
+  vfprintf(stderr, msg, args);
+  printf("\n");
 }

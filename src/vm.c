@@ -116,6 +116,7 @@ interpret_result_t run_vm(chunk_t* chunk)
     case OP_GET_GLOBAL: {
       const char* name = AS_STRING(chunk->constants.values[*vm.ip++]);
       value_t var = table_get(&vm.globals, name);
+      // not working, uninitialized variable return also NIL !!
       if (IS_NIL(var)) {
         printf("Error: unbound variable '%s'\n", name);
         return ERROR_RUNTIME_EXCEPTION;
@@ -204,8 +205,8 @@ interpret_result_t binary_operation(char sign)
   if (!IS_NUMBER(peek_stack(0)) || !IS_NUMBER(peek_stack(1))) {
     return ERROR_RUNTIME_EXCEPTION;
   }
-  int32_t a = AS_NUMBER(pop());
-  int32_t b = AS_NUMBER(pop());
+  double a = AS_NUMBER(pop());
+  double b = AS_NUMBER(pop());
   switch (sign) {
   case '+':
     push(NUMBER_VAL(a + b));
@@ -220,7 +221,7 @@ interpret_result_t binary_operation(char sign)
     push(NUMBER_VAL(b / a));
     break;
   case '%':
-    push(NUMBER_VAL(b % a));
+    push(NUMBER_VAL((int) b % (int) a));
     break;
   case '>':
     push(b > a ? TRUE_VAL : FALSE_VAL);

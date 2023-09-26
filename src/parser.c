@@ -12,7 +12,6 @@ void handle_minus(parser_t* parser);
 void unary(parser_t* parser);
 void statement(parser_t* parser);
 void assignement(parser_t* parser);
-
 void error_parser(char* msg, ...);
 
 int paren_L_count;
@@ -29,7 +28,6 @@ void init_parser(
   parser->stack = stack;
   parser->is_error = false;
   parser->queue->head = NULL;
-  parser->error = NULL;
   parser->stack->top = NULL;
   paren_L_count = 0;
   paren_R_count = 0;
@@ -45,7 +43,7 @@ parsing_error_t parse(parser_t* parser)
     advance_lexer(lexer, scanner);
     expression(parser);
     if (parser->is_error) {
-      return "error";
+      return "error parser";
     }
   }
   while (stack->top) {
@@ -95,15 +93,16 @@ void expression(parser_t* parser)
     statement(parser);
     break;
   case TOKEN_NEWLINE:
+    enqueue_token(parser, token);
     if (lexer->previous.type != TOKEN_SEMICOLON
         && lexer->previous.type != TOKEN_LEFT_BRACE
         && lexer->previous.type != TOKEN_NEWLINE) {
-      error_parser("missing ';' after statement at line %d.\n", token.line);
+      error_parser("missing ';' after statement at line %d.", token.line);
       parser->is_error = true;
       return;
     }
     if (paren_L_count != paren_R_count) {
-      error_parser("unmatched parenthesis at line %d\n", token.line - 1);
+      error_parser("unmatched parenthesis at line %d", token.line - 1);
       parser->is_error = true;
       paren_L_count = paren_R_count = 0;
       return;
@@ -127,7 +126,7 @@ void expression(parser_t* parser)
   case TOKEN_EOF:
     return;
   case TOKEN_ERROR:
-    error_parser("%s at line %d.\n", token.start, token.line);
+    error_parser("%s at line %d.", token.start, token.line);
     parser->is_error = true;
     exit(0);
     return;
@@ -218,6 +217,7 @@ void error_parser(char* msg, ...)
   va_end(args);
   fprintf(stderr, "Error: ");
   vfprintf(stderr, msg, args);
+  printf("\n");
 }
 
 //*************** SHUNTING YARD ****************//
