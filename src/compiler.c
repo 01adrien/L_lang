@@ -18,7 +18,7 @@ void end_block(compiler_t* compiler);
 void var_declaration(compiler_t* compiler);
 void get_set_id(token_t token, compiler_t* compiler);
 void compile(compiler_t* compiler);
-void error_compiler(char* msg, ...);
+void error_compiler(const char* msg, ...);
 
 void init_compiler(compiler_t* compiler, chunk_t* chunk, token_queue_t* queue)
 {
@@ -132,7 +132,6 @@ compile_error_t compilation(compiler_t* compiler)
 void compile_to(token_type_t token, compiler_t* compiler)
 {
   token_queue_t* queue = compiler->queue;
-  chunk_t* chunk = compiler->chunk;
   if (!queue->head) {
     return;
   }
@@ -216,7 +215,7 @@ uint16_t parse_variable(token_t token, compiler_t* compiler)
 
 uint16_t get_constant_index(chunk_t* chunk, token_t token)
 {
-  char* s = calloc(token.length, sizeof(char));
+  char* s = (char*) calloc(token.length, sizeof(char));
   memcpy(s, token.start, token.length);
   value_t str = get_string(s);
   return write_constant(chunk, str);
@@ -266,12 +265,12 @@ bool id_equal(token_t id1, token_t id2)
 
 value_t string(token_t token)
 {
-  char* str = calloc(token.length - 2, sizeof(char));
+  char* str = (char*) calloc(token.length - 2, sizeof(char));
   memcpy(str, token.start + 1, token.length - 2);
   return get_string(str);
 }
 
-void error_compiler(char* msg, ...)
+void error_compiler(const char* msg, ...)
 {
   va_list args;
   va_start(args, msg);

@@ -1,10 +1,10 @@
-#include "includes/chunk.h"
-#include "includes/compiler.h"
-#include "includes/debug.h"
-#include "includes/lexer.h"
-#include "includes/parser.h"
-#include "includes/scanner.h"
-#include "includes/vm.h"
+#include "src/includes/chunk.h"
+#include "src/includes/compiler.h"
+#include "src/includes/debug.h"
+#include "src/includes/lexer.h"
+#include "src/includes/parser.h"
+#include "src/includes/scanner.h"
+#include "src/includes/vm.h"
 #include <stdio.h>
 
 void repl();
@@ -23,6 +23,9 @@ int main(int argc, char const* argv[])
 {
   init_vm();
   if (argc == 2) {
+    char command[20];
+    sprintf(command, "cat -n %s", argv[1]);
+    system(command);
     run_file(argv[1]);
   }
   if (argc == 1) {
@@ -42,13 +45,16 @@ void run_file(const char* path)
   init_scanner(source, &scanner);
   init_parser(&lexer, &scanner, &parser, &token_stack, &token_queue);
   advance_lexer(&lexer, &scanner);
-  parse(&parser);
+  parsing(&parser);
   if (parser.is_error) {
     free_queue(parser.queue);
     free_chunk(&chunk);
     free(source);
     return;
   }
+#ifdef DEBUG_PRINT_TOKEN_QUEUE
+  print_queue(parser.queue);
+#endif
   init_compiler(&compiler, &chunk, parser.queue);
   compilation(&compiler);
   if (compiler.is_error) {
@@ -57,10 +63,7 @@ void run_file(const char* path)
     free(source);
     return;
   }
-  printf("\n%s\n", source);
-
 #ifdef DEBUG_PRINT_BYTECODE
-  printf("\n");
   debug_chunk(&chunk, "byte code");
 #endif
 
@@ -91,7 +94,6 @@ char* read_file(const char* path)
     fprintf(stderr, "Could not read file \"%s\".\n", path);
     exit(74);
   }
-
   buffer[bytesRead] = '\0';
   fclose(file);
   return buffer;

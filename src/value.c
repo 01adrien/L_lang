@@ -43,18 +43,5 @@ value_type_t type_of(value_t value)
   if (!isnan(value.as_double)) {
     return NUMBER_T;
   }
-  uint16_t type = (*(uint64_t*) &value.as_int) >> 48;
-  switch (type) {
-  case STRING_T:
-    return STRING_T;
-    break;
-  case BOOLEAN_T:
-    return BOOLEAN_T;
-    break;
-  case NIL_T:
-    return NIL_T;
-  default:
-    printf("unknow type\n");
-    break;
-  }
+  return (*(uint64_t*) &value.as_int) >> 48;
 }

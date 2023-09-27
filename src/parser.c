@@ -33,9 +33,8 @@ void init_parser(
   paren_R_count = 0;
 }
 
-parsing_error_t parse(parser_t* parser)
+parsing_error_t parsing(parser_t* parser)
 {
-
   lexer_t* lexer = parser->lexer;
   scanner_t* scanner = parser->scanner;
   token_stack_t* stack = parser->stack;
@@ -46,12 +45,6 @@ parsing_error_t parse(parser_t* parser)
       return "error parser";
     }
   }
-  while (stack->top) {
-    enqueue_token(parser, get_token(pop_token(stack)));
-  }
-#ifdef DEBUG_PRINT_TOKEN_QUEUE
-  print_queue(parser->queue);
-#endif
 }
 
 void expression(parser_t* parser)
@@ -96,6 +89,7 @@ void expression(parser_t* parser)
     enqueue_token(parser, token);
     if (lexer->previous.type != TOKEN_SEMICOLON
         && lexer->previous.type != TOKEN_LEFT_BRACE
+        && lexer->previous.type != TOKEN_RIGHT_BRACE
         && lexer->previous.type != TOKEN_NEWLINE) {
       error_parser("missing ';' after statement at line %d.", token.line);
       parser->is_error = true;
@@ -132,7 +126,7 @@ void expression(parser_t* parser)
     return;
   default:
     printf("Unknow token : ");
-    PRINT_TOKEN(lexer->current);
+    PRINT_TOKEN(token);
     break;
   }
 }

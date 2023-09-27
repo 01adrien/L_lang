@@ -30,10 +30,9 @@ void skip_blanks(scanner_t* scanner)
       advance_scanner(scanner);
       break;
     case '/':
-      while (scanner->current[1] != ';') {
+      while (scanner->current[1] != '/') {
         advance_scanner(scanner);
       }
-
     default:
       return;
     }

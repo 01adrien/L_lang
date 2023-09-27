@@ -35,7 +35,7 @@ void init_parser(
     lexer_t* lexer, scanner_t* scanner, parser_t* parser, token_stack_t* stack,
     token_queue_t* queue
 );
-parsing_error_t parse(parser_t* parser);
+parsing_error_t parsing(parser_t* parser);
 token_t get_token(node_t* node);
 node_t* dequeue_token(token_queue_t* queue);
 

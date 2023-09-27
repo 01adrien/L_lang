@@ -91,9 +91,9 @@ token_t scan_token(scanner_t* scanner)
         PREC_EQUALITY
     );
   case ';':
-    scanner->line++;
     return make_token(TOKEN_SEMICOLON, scanner, PREC_NONE);
   case '\n':
+    scanner->line++;
     return make_token(TOKEN_NEWLINE, scanner, PREC_NONE);
   case '$':
   case '.':

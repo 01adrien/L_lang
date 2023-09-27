@@ -75,4 +75,4 @@ char* type(token_t token);
 token_t
 make_token(token_type_t type, scanner_t* scanner, precedence_t precedence);
 
-#endif   //
+#endif

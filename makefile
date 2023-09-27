@@ -1,17 +1,27 @@
-.default_goal := build
+MEMFLAGS := --leak-check=full --show-leak-kinds=all
+LOCAL_LIB = /usr/local/lib
+TEST_RUNNER = $(LOCAL_LIB)/libcriterion.so
+SRC := $(wildcard src/*.c)
+TEST := $(wildcard tests/*_test.c)
+OBJ := $(SRC:.c = .o)
+CFLAGS := -std=c99 -g3
+BIN := build
+PROG := prog.lang
 
-flags := -std=c99 -g3
-src := $(wildcard src/*.c)
-obj := $(src:.c = .o)
+.DEFAULT_GOAL := $(BIN) 
 
-build: $(obj)
-	@ gcc $^ -o $@ $(flags) && ./build prog.lang
+$(BIN): $(SRC) main.c
+	@ gcc $(CFLAGS) $^ -o $@  
 
 memcheck:                                                                       
-	@ valgrind --leak-check=full --show-leak-kinds=all ./build prog.lang
+	@ valgrind $(MEMFLAGS) ./$(BIN) $(PROG)
 
-run:
-	@ ./build prog.lang
+test: $(TEST) $(OBJ)
+	@ gcc -I $(LOCAL_LIB)/criterion/include $(CFLAGS) -o $@ $^ $(TEST_RUNNER) && ./test
+
+run-prog:
+	@ ./$(BIN) $(PROG)
 
 clean:
-	@ rm build
+	@ rm -f build test
+

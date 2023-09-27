@@ -3,3 +3,4 @@
 - resize down hashtable
 - init var with null values
 - track scope for error reporting
+- var a = a from upper scope not working
