@@ -2,7 +2,6 @@
 #include "criterion.h"
 
 scanner_t scanner;
-lexer_t lexer;
 
 void setup_lexer(void)
 {
